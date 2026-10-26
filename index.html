@@ -204,13 +204,33 @@ const jsPsych = initJsPsych({
         }
       }
     });
+    const payload = JSON.stringify(row);
 
-    navigator.sendBeacon(
-      SCRIPT_URL,
-      new Blob([JSON.stringify(row)], {type:"text/plain;charset=utf-8"})
-    );
+    document.body.innerHTML = "<div style='font-family:Vazirmatn,Tahoma;text-align:center;margin-top:80px;font-size:20px'>در حال ذخیرهٔ پاسخ‌ها… لطفاً چند لحظه صبر کنید و صفحه را نبندید.</div>";
 
-    document.body.innerHTML = "<div style='font-family:Vazirmatn,Tahoma;text-align:center;margin-top:80px;font-size:20px'>از شرکت شما سپاسگزاریم! پاسخ‌های شما ثبت شد.</div>";
+    function send(attempt){
+      fetch(SCRIPT_URL, {
+        method:"POST", mode:"no-cors", keepalive:true,
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:payload
+      }).then(()=>{
+        document.body.innerHTML = "<div style='font-family:Vazirmatn,Tahoma;text-align:center;margin-top:80px;font-size:20px'>✅ از شرکت شما سپاسگزاریم! پاسخ‌های شما ثبت شد.</div>";
+      }).catch(()=>{
+        if(attempt < 3){ setTimeout(()=>send(attempt+1), 2000); }
+        else {
+          document.body.innerHTML =
+            "<div style='font-family:Vazirmatn,Tahoma;text-align:center;margin-top:80px;font-size:18px'>"+
+            "⚠️ اتصال برقرار نشد و پاسخ‌های شما هنوز ثبت نشده است.<br>لطفاً اتصال اینترنت/VPN خود را بررسی کنید و دکمهٔ زیر را بزنید:<br><br>"+
+            "<button id='resendBtn' style='font-family:Vazirmatn;font-size:18px;padding:12px 30px;border:none;border-radius:8px;background:#2f6fed;color:#fff;cursor:pointer'>ارسال دوباره</button>"+
+            "</div>";
+          document.getElementById('resendBtn').onclick = function(){
+            document.body.innerHTML = "<div style='font-family:Vazirmatn,Tahoma;text-align:center;margin-top:80px;font-size:20px'>در حال ارسال دوباره… صفحه را نبندید.</div>";
+            send(1);
+          };
+        }
+      });
+    }
+    send(1);
   }
 });
 
